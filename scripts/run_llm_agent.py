@@ -5,6 +5,8 @@ Required environment variables:
 Optional:
   SCIAGENT_MODEL (default: gpt-4.1-mini)
   SCIAGENT_BASE_URL (for OpenAI-compatible providers)
+
+A local .env file is loaded when python-dotenv is installed.
 """
 
 from __future__ import annotations
@@ -12,6 +14,11 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    load_dotenv = None
 
 from sciagent.agent import ScientificAgent
 from sciagent.backends.openai_compatible import OpenAICompatibleBackend
@@ -26,6 +33,9 @@ OUTPUT_PATH = ROOT / "experiments" / "llm" / "environmental_anomaly.json"
 
 
 def main() -> None:
+    if load_dotenv is not None:
+        load_dotenv(ROOT / ".env")
+
     if not os.environ.get("SCIAGENT_API_KEY"):
         raise SystemExit("SCIAGENT_API_KEY is required")
 
