@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
+from .backends.action_schema import validate_action
 from .execution import ScientificExecutor
 from .tools.registry import ToolRegistry
 
@@ -26,7 +27,7 @@ class AgentResult:
 
 
 class ScientificAgent:
-    """Model-agnostic agent loop for controlled scientific tool use."""
+    """Model-agnostic agent loop with validated scientific tool use."""
 
     def __init__(self, backend: AgentBackend, registry: ToolRegistry, *, max_steps: int = 10) -> None:
         if max_steps < 1:
@@ -38,35 +39,28 @@ class ScientificAgent:
 
     def run(self, question: str, dataset_description: dict[str, Any]) -> AgentResult:
         observations: list[dict[str, Any]] = [{"type": "dataset", "description": dataset_description}]
+        available_tools = {tool["name"] for tool in self.registry.list_tools()}
 
         for _ in range(self.max_steps):
-            action = self.backend.next_action(
+            raw_action = self.backend.next_action(
                 question=question,
                 observations=observations,
                 tools=self.registry.list_tools(),
             )
-            action_type = action.get("type")
+            action = validate_action(raw_action, available_tools)
 
-            if action_type == "final":
+            if action["type"] == "final":
                 return AgentResult(
-                    conclusion=str(action.get("conclusion", "")),
+                    conclusion=action["conclusion"],
                     observations=observations,
                     trace=self.executor.trace.to_dict(),
                 )
 
-            if action_type != "tool":
-                raise ValueError(f"Unsupported action type: {action_type!r}")
-
-            name = action.get("name")
-            arguments = action.get("arguments", {})
-            if not isinstance(name, str) or not isinstance(arguments, dict):
-                raise ValueError("Tool action requires a name and dictionary arguments")
-
-            result = self.executor.execute(name, **arguments)
+            result = self.executor.execute(action["name"], **action["arguments"])
             observations.append({
                 "type": "tool_result",
-                "tool": name,
-                "arguments": arguments,
+                "tool": action["name"],
+                "arguments": action["arguments"],
                 "result": result,
             })
 
