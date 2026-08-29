@@ -24,7 +24,7 @@ from sciagent.agent import ScientificAgent
 from sciagent.backends.openai_compatible import OpenAICompatibleBackend
 from sciagent.evaluation.benchmark import evaluate_case, load_case
 from sciagent.tools.data import inspect_dataset, load_dataset
-from sciagent.tools.default_registry import build_default_registry
+from sciagent.tools.dataset_registry import build_dataset_registry
 
 ROOT = Path(__file__).resolve().parents[1]
 CASE_PATH = ROOT / "benchmarks" / "cases" / "environmental_anomaly.json"
@@ -43,9 +43,11 @@ def main() -> None:
     df = load_dataset(DATASET_PATH)
     dataset_description = inspect_dataset(df)
 
+    # The agent operates on the already-loaded benchmark dataset. Tools expose
+    # column names rather than filesystem paths or arbitrary Python objects.
     agent = ScientificAgent(
         OpenAICompatibleBackend(),
-        build_default_registry(),
+        build_dataset_registry(df),
         max_steps=10,
     )
     result = agent.run(case["question"], dataset_description)
