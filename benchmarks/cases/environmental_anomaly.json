@@ -1,0 +1,19 @@
+{
+  "id": "environmental_anomaly_v1",
+  "version": "1.0",
+  "question": "Identify unusual behavior in the PM2.5 measurements and determine whether the anomalous period differs significantly from normal observations.",
+  "dataset": "datasets/environmental_sensor_data.csv",
+  "reference_analysis": {
+    "anomaly_method": "absolute z-score > 3 on PM2.5",
+    "significance_method": "Welch's independent two-sample t-test",
+    "correlation_method": "Pearson correlation between temperature and PM2.5"
+  },
+  "expected_outputs": [
+    "anomalous observation indices",
+    "normal versus anomalous PM2.5 comparison",
+    "statistical test result",
+    "temperature-PM2.5 correlation",
+    "evidence-based conclusion"
+  ],
+  "evaluation_notes": "This benchmark specifies the reference methods so agent decisions can be evaluated rather than silently treated as correct."
+}
